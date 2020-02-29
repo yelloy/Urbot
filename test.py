@@ -1,4 +1,4 @@
 b = [2]
-for i in b:
+if 0 != 0.0:
     b.append(1)
     print(b)

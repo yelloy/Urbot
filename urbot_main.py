@@ -5,7 +5,7 @@ import threading
 import time
 
 EXIT = False
-cam = cv2.VideoCapture("output1.avi")
+cam = cv2.VideoCapture("output3.avi")
 
 
 def return_coord(img):
@@ -16,7 +16,7 @@ def return_coord(img):
 
     # КООРДИНАТЫ ЦИЛИНДРОВ
     coord_cylinder = []
-    pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=30, param2=50, minRadius=0, maxRadius=0)
+    pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=80, param2=50, minRadius=0, maxRadius=0)
 
     if pegs is not None:
         # Чисто подсветка
@@ -72,40 +72,103 @@ def return_coord(img):
     return coord
 
 
+def find_holes(img):
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # КООРДИНАТЫ ОТВЕРСТИЙ
+    coord_holes = []
+    pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 50, param1=50, param2=60, minRadius=0, maxRadius=0)
+
+    if pegs is not None:
+        # Запись координат
+        for peg in pegs[0]:
+            #print("КООРДИНАТЫ ОТВЕРСТИЯ: ", int(peg[1]), int(peg[0]))
+            #print("ЦВЕТ ОТВЕРСТИЯ: ", img[int(peg[1])][int(peg[0])])
+            if img[int(peg[1])][int(peg[0])][1] < 50 and img[int(peg[1])][int(peg[0])][2] > 50:
+                coord_holes.append([int(peg[0]), int(peg[1])])
+    else:
+        pass
+        #print("ОТВЕРСТИЯ НЕ НАЙДЕНЫ")
+
+    return coord_holes
+
+
 def find_cylinder(camera):
-    proof = [[]]
-    N = 20
+    proof = [[[0, 0]]]
+    cylinder_coord = []
+    N = 10
     # n раз проверяем область и рассчитываем вероятность и координату положения цилиндра
     for i in range(N):
+        #img = cv2.imread("test_image7.jpg")
         ret, img = camera.read()
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # КООРДИНАТЫ ЦИЛИНДРОВ
         coord_cylinder = []
-        pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=30, param2=50, minRadius=0, maxRadius=0)
-
+        pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=30, param2=30, minRadius=30, maxRadius=70)
+        #print(pegs)
         if pegs is not None:
             # Запись координат
             for peg in pegs[0]:
+                shodstvo = False
                 x = int(peg[1])
                 y = int(peg[0])
-                #print(img[x][y])
-                if img[x][y][1] < 40 and img[x][y][0] < 50 and img[x][y][2] < 50:
-                    for coord_raw_i in range(len(proof)):
-                        for coord_i in proof[coord_raw_i]:
-                            print("Wwwwwwwwwwwwwwwwwwwwwwwwww")
-                            x_ = proof[coord_raw_i][coord_i][0]
-                            y_ = proof[coord_raw_i][coord_i][1]
-                            delta = ((x_ - x) ** 2 + (y_ - y) ** 2)**0.5
-                            print("delta: ", delta)
-                            if delta < 8 and delta != 0:
-                                proof[coord_raw_i].append([x, y])
-                    if len(proof) == 0:
-                        proof[coord_raw_i].append([x, y])
-        else:
-            print("ЦИЛИНДРЫ НЕ НАЙДЕНЫ")
+                x, y = int(peg[1]), int(peg[0])
+                radius = 40
+                x_border1 = x + radius
+                if x_border1 >= 480:
+                    x_border1 = 479
+                x_border2 = x - radius
+                if x_border2 < 0:
+                    x_border2 = 0
+                y_border1 = y + radius
+                if y_border1 >= 640:
+                    y_border1 = 639
+                y_border2 = y - radius
+                if y_border2 < 0:
+                    y_border2 = 0
 
-    print(proof)
+                border_point1 = img[x_border1][y_border1]
+                border_point2 = img[x_border1][y_border2]
+                border_point3 = img[x_border2][y_border1]
+                border_point4 = img[x_border2][y_border2]
+                border_condition = (border_point1[0] < 70 and border_point1[1] > 50) \
+                                   or (border_point2[0] < 70 and border_point2[1] > 50) \
+                                   or (border_point3[0] < 70 and border_point3[1] > 50) \
+                                   or (border_point4[0] < 70 and border_point4[1] > 50)
+
+                #print(img[x][y])
+                if img[x][y][1] < 40 and img[x][y][0] < 50 and img[x][y][2] < 50 and not border_condition:
+                    rg = len(proof)
+
+                    #print(rg)
+                    for coord_raw_i in range(rg):
+                        last_element = len(proof[coord_raw_i])-1
+                        x_ = proof[coord_raw_i][last_element][0]
+                        y_ = proof[coord_raw_i][last_element][1]
+                        delta = ((x_ - x) ** 2 + (y_ - y) ** 2)**0.5
+                        if delta < 8:
+                            proof[coord_raw_i].append([x, y])
+                            shodstvo = True
+                    if not shodstvo:
+                        proof.append([[x, y]])
+    for element in proof:
+        #print(element)
+        if len(element) > 6:
+            mean_x = []
+            mean_y = []
+            for el in element:
+                mean_x.append(el[0])
+                mean_y.append(el[1])
+            mean_x = int(np.mean(mean_x))
+            mean_y = int(np.mean(mean_y))
+            cylinder_coord.append([mean_x, mean_y])
+
+    if not len(cylinder_coord):
+        pass
+        #print("ЦИЛИНДРЫ НЕ НАЙДЕНЫ")
+    return cylinder_coord
+
+
 # Получится использовать для экономии времени в случае, если будет понятно как отличать не вставленные цилиндры
 def thread_find_cylinders(camera):
     while not EXIT:
@@ -119,9 +182,9 @@ def thread_find_cylinders(camera):
         time.sleep(0.04)
 # threading.Thread(target=thread_find_cylinders, args=cam)
 
-
-''' ПРОВЕРКА ФИЛЬТРОВ НА КАРТИНКАХ
-img = cv2.imread("test_image7.jpg")
+'''
+# ПРОВЕРКА ФИЛЬТРОВ НА КАРТИНКАХ
+img = cv2.imread("test_image3.jpg")
 coord = return_coord(img)
 print("CYLINDERS: ", coord[0])
 print("HOLES: ", coord[1])
@@ -133,14 +196,23 @@ for i in coord[1]:
 
 cv2.imshow('my webcam', img)
 cv2.waitKey(0)
-'''
+#'''
 
 # ЦИКЛ СО СМЕНОЙ НОМЕРА ЗОНЫ
 
-for i in range(7):
+while True:
     # ДВИЖЕНИЕ В ЗОНУ 1 до тех пор пока не найден первый цилиндр
     # (спустя 1,5 секунды после его нахождения, остановить движение манипулятора и хватать цилиндр)
     pass
     # Захват изображения с камеры
-    find_cylinder(cam)
+    ret, img = cam.read()
+    cylinder_coord = find_cylinder(cam)
+    hole_coord = find_holes(img)
+    for i in cylinder_coord:
+        cv2.circle(img, (i[1], i[0]), 2, (255, 255, 255), 3)
+    for i in hole_coord:
+        cv2.circle(img, (i[0], i[1]), 2, (0, 0, 255), 3)
+    cv2.imshow("img", img)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
     # Передаем координаты пикселей функции, преобразующей их в глобальные

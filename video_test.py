@@ -10,9 +10,10 @@ def return_coord(img):
 
     # КООРДИНАТЫ ЦИЛИНДРОВ
     coord_cylinder = []
-    pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=80, param2=50, minRadius=0, maxRadius=0)
+    pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=30, param2=40, minRadius=30, maxRadius=190)
 
     if pegs is not None:
+        '''
         # Чисто подсветка
         circles = np.uint16(np.around(pegs))
         for i in circles[0,:]:
@@ -23,19 +24,45 @@ def return_coord(img):
 
         #cv2.imshow('detected cylindres',img_gray)
         #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+        #cv2.destroyAllWindows()'''
         ########################
         # Запись координат
         for peg in pegs[0]:
-            if img_original[int(peg[1])][int(peg[0])][1] < 40 and img_original[int(peg[1])][int(peg[0])][0] < 50\
-                and img_original[int(peg[1])][int(peg[0])][2] < 50 \
-                    and (img_original[int(peg[1]) + 30][int(peg[0])][0] > 70 \
-                    or img_original[int(peg[1]) - 30][int(peg[0])][0] > 70):
-                print("КООРДИНАТЫ ЦИЛИНДРА: ", int(peg[1]), int(peg[0]))
-                print("ЦВЕТ ЦИЛИНДРА: ", img_original[int(peg[1])][int(peg[0])])
-                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[int(peg[1]) + 30][int(peg[0])])
-                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[int(peg[1]) - 30][int(peg[0])])
-                coord_cylinder.append([int(peg[0]), int(peg[1])])
+            x, y = int(peg[1]), int(peg[0])
+            radius = 40
+            x_border1 = x + radius
+            if x_border1 >= 480:
+                x_border1 = 479
+            x_border2 = x - radius
+            if x_border2 < 0:
+                x_border2 = 0
+            y_border1 = y + radius
+            if y_border1 >= 640:
+                y_border1 = 639
+            y_border2 = y - radius
+            if y_border2 < 0:
+                y_border2 = 0
+
+            border_point1 = img_original[x_border1][y_border1]
+            border_point2 = img_original[x_border1][y_border2]
+            border_point3 = img_original[x_border2][y_border1]
+            border_point4 = img_original[x_border2][y_border2]
+            border_condition = (border_point1[0] < 70 and border_point1[1] > 50) \
+                               or (border_point2[0] < 70 and border_point2[1] > 50) \
+                               or (border_point3[0] < 70 and border_point3[1] > 50) \
+                               or (border_point4[0] < 70 and border_point4[1] > 50)
+
+            if img_original[x, y][1] < 40 and img_original[x, y][0] < 50\
+                and img_original[x, y][2] < 50:
+                #print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[x_border1][y])
+                #print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[x_border2][y])
+                #print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[x][y_border2])
+                #print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[x][y_border2])
+
+                if not border_condition:
+                    #print("КООРДИНАТЫ ЦИЛИНДРА: ", int(peg[1]), int(peg[0]))
+                    #print("ЦВЕТ ЦИЛИНДРА: ", img_original[int(peg[1])][int(peg[0])])
+                    coord_cylinder.append([int(peg[0]), int(peg[1])])
     else:
         print("ЦИЛИНДРЫ НЕ НАЙДЕНЫ")
 
@@ -44,6 +71,7 @@ def return_coord(img):
     pegs = cv2.HoughCircles(img_gray_copy, cv2.HOUGH_GRADIENT, 1, 50, param1=50, param2=60, minRadius=0, maxRadius=0)
 
     if pegs is not None:
+        '''
         # Чисто подсветка
         circles = np.uint16(np.around(pegs))
         for i in circles[0,:]:
@@ -54,16 +82,16 @@ def return_coord(img):
 
         #cv2.imshow('detected holes', img_gray_copy)
         #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+        #cv2.destroyAllWindows()'''
         ########################
         # Запись координат
         for peg in pegs[0]:
-            print("КООРДИНАТЫ ОТВЕРСТИЯ: ", int(peg[1]), int(peg[0]))
-            print("РАДИУС ОТВЕРСТИЯ: ", peg[2])
-            print("ЦВЕТ ОТВЕРСТИЯ: ", img_original[int(peg[1])][int(peg[0])])
+            #print("КООРДИНАТЫ ОТВЕРСТИЯ: ", int(peg[1]), int(peg[0]))
+            #print("РАДИУС ОТВЕРСТИЯ: ", peg[2])
+            #print("ЦВЕТ ОТВЕРСТИЯ: ", img_original[int(peg[1])][int(peg[0])])
             if img_original[int(peg[1])][int(peg[0])][1] < 50 and img_original[int(peg[1])][int(peg[0])][2] > 50:
-                print("ЦВЕТ ЖЕЛТЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) + 30][int(peg[0])])
-                print("ЦВЕТ ЖЕЛТЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) - 30][int(peg[0])])
+                #print("ЦВЕТ ЖЕЛТЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) + 30][int(peg[0])])
+                #print("ЦВЕТ ЖЕЛТЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) - 30][int(peg[0])])
                 coord_holes.append([int(peg[0]), int(peg[1])])
     else:
         print("ОТВЕРСТИЯ НЕ НАЙДЕНЫ")
@@ -85,4 +113,4 @@ while True:
     cv2.imshow('1', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-    print(coord)
+    #print(coord)
