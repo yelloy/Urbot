@@ -1,6 +1,11 @@
 #import urx
 import cv2
 import numpy as np
+import threading
+import time
+
+EXIT = False
+cam = cv2.VideoCapture("output1.avi")
 
 
 def return_coord(img):
@@ -11,7 +16,7 @@ def return_coord(img):
 
     # КООРДИНАТЫ ЦИЛИНДРОВ
     coord_cylinder = []
-    pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=80, param2=50, minRadius=0, maxRadius=0)
+    pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=30, param2=50, minRadius=0, maxRadius=0)
 
     if pegs is not None:
         # Чисто подсветка
@@ -67,6 +72,55 @@ def return_coord(img):
     return coord
 
 
+def find_cylinder(camera):
+    proof = [[]]
+    N = 20
+    # n раз проверяем область и рассчитываем вероятность и координату положения цилиндра
+    for i in range(N):
+        ret, img = camera.read()
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # КООРДИНАТЫ ЦИЛИНДРОВ
+        coord_cylinder = []
+        pegs = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 20, param1=30, param2=50, minRadius=0, maxRadius=0)
+
+        if pegs is not None:
+            # Запись координат
+            for peg in pegs[0]:
+                x = int(peg[1])
+                y = int(peg[0])
+                #print(img[x][y])
+                if img[x][y][1] < 40 and img[x][y][0] < 50 and img[x][y][2] < 50:
+                    for coord_raw_i in range(len(proof)):
+                        for coord_i in proof[coord_raw_i]:
+                            print("Wwwwwwwwwwwwwwwwwwwwwwwwww")
+                            x_ = proof[coord_raw_i][coord_i][0]
+                            y_ = proof[coord_raw_i][coord_i][1]
+                            delta = ((x_ - x) ** 2 + (y_ - y) ** 2)**0.5
+                            print("delta: ", delta)
+                            if delta < 8 and delta != 0:
+                                proof[coord_raw_i].append([x, y])
+                    if len(proof) == 0:
+                        proof[coord_raw_i].append([x, y])
+        else:
+            print("ЦИЛИНДРЫ НЕ НАЙДЕНЫ")
+
+    print(proof)
+# Получится использовать для экономии времени в случае, если будет понятно как отличать не вставленные цилиндры
+def thread_find_cylinders(camera):
+    while not EXIT:
+        ret, img = camera.read()
+        coord = return_coord(img)
+        for i in coord[0]:
+            cv2.circle(img, (i[0], i[1]), 2, (255, 255, 255), 3)
+        for i in coord[1]:
+            cv2.circle(img, (i[0], i[1]), 2, (0, 0, 255), 3)
+        cv2.imshow('robot gripper', img)
+        time.sleep(0.04)
+# threading.Thread(target=thread_find_cylinders, args=cam)
+
+
+''' ПРОВЕРКА ФИЛЬТРОВ НА КАРТИНКАХ
 img = cv2.imread("test_image7.jpg")
 coord = return_coord(img)
 print("CYLINDERS: ", coord[0])
@@ -79,38 +133,14 @@ for i in coord[1]:
 
 cv2.imshow('my webcam', img)
 cv2.waitKey(0)
-
-#cam = cv2.VideoCapture(0)
-#ret_val, img = cam.read()
-#cv2.imshow('my webcam', img)
-#cv2.waitKey(0)
-
 '''
-rob = urx.Robot("192.168.0.100")
-rob.set_tcp((0, 0, 0.1, 0, 0, 0))
-rob.set_payload(2, (0, 0, 0.1))
-sleep(0.2)  #leave some time to robot to process the setup commands
-rob.movej((1, 2, 3, 4, 5, 6), a, v)
-rob.movel((x, y, z, rx, ry, rz), a, v)
-print "Current tool pose is: ",  rob.getl()
-rob.movel((0.1, 0, 0, 0, 0, 0), a, v, relative=true)  # move relative to current pose
-rob.translate((0.1, 0, 0), a, v)  #move tool and keep orientation
-rob.stopj(a)
 
-robot.movel(x, y, z, rx, ry, rz), wait=False)
-while True :
-    sleep(0.1)  #sleep first since the robot may not have processed the command yet
-    if robot.is_program_running():
-        break
+# ЦИКЛ СО СМЕНОЙ НОМЕРА ЗОНЫ
 
-robot.movel(x, y, z, rx, ry, rz), wait=False)
-while.robot.getForce() < 50:
-    sleep(0.01)
-    if not robot.is_program_running():
-        break
-robot.stopl()
-
-try:
-    robot.movel((0,0,0.1,0,0,0), relative=True)
-except RobotError, ex:
-    print("Robot could not execute move (emergency stop for example), do something", ex)'''
+for i in range(7):
+    # ДВИЖЕНИЕ В ЗОНУ 1 до тех пор пока не найден первый цилиндр
+    # (спустя 1,5 секунды после его нахождения, остановить движение манипулятора и хватать цилиндр)
+    pass
+    # Захват изображения с камеры
+    find_cylinder(cam)
+    # Передаем координаты пикселей функции, преобразующей их в глобальные

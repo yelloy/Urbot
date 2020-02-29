@@ -28,12 +28,13 @@ def return_coord(img):
         # Запись координат
         for peg in pegs[0]:
             if img_original[int(peg[1])][int(peg[0])][1] < 40 and img_original[int(peg[1])][int(peg[0])][0] < 50\
-                and img_original[int(peg[1])][int(peg[0])][2] < 50 and img_original[int(peg[1]) + 30][int(peg[0])][0] > 70 \
-                    and img_original[int(peg[1]) - 30][int(peg[0])][0] > 70:
+                and img_original[int(peg[1])][int(peg[0])][2] < 50 \
+                    and (img_original[int(peg[1]) + 30][int(peg[0])][0] > 70 \
+                    or img_original[int(peg[1]) - 30][int(peg[0])][0] > 70):
                 print("КООРДИНАТЫ ЦИЛИНДРА: ", int(peg[1]), int(peg[0]))
                 print("ЦВЕТ ЦИЛИНДРА: ", img_original[int(peg[1])][int(peg[0])])
-                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) + 30][int(peg[0])])
-                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) - 30][int(peg[0])])
+                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[int(peg[1]) + 30][int(peg[0])])
+                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ЦИЛИНДРFFFFFFFFFFFFFFFFFFА: ", img_original[int(peg[1]) - 30][int(peg[0])])
                 coord_cylinder.append([int(peg[0]), int(peg[1])])
     else:
         print("ЦИЛИНДРЫ НЕ НАЙДЕНЫ")
@@ -72,9 +73,8 @@ def return_coord(img):
     return coord
 
 
-cap = cv2.VideoCapture("output3.avi")
+cap = cv2.VideoCapture("output2.avi")
 ret, frame = cap.read()
-cv2.imwrite("FOCUS.jpg", frame)
 while True:
     ret, frame = cap.read()
     coord = return_coord(frame)
