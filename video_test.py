@@ -1,4 +1,3 @@
-#import urx
 import cv2
 import numpy as np
 
@@ -29,9 +28,12 @@ def return_coord(img):
         # Запись координат
         for peg in pegs[0]:
             if img_original[int(peg[1])][int(peg[0])][1] < 40 and img_original[int(peg[1])][int(peg[0])][0] < 50\
-            and img_original[int(peg[1])][int(peg[0])][2] < 50:
+                and img_original[int(peg[1])][int(peg[0])][2] < 50 and img_original[int(peg[1]) + 30][int(peg[0])][0] > 70 \
+                    and img_original[int(peg[1]) - 30][int(peg[0])][0] > 70:
                 print("КООРДИНАТЫ ЦИЛИНДРА: ", int(peg[1]), int(peg[0]))
                 print("ЦВЕТ ЦИЛИНДРА: ", img_original[int(peg[1])][int(peg[0])])
+                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) + 30][int(peg[0])])
+                print("ЦВЕТ БЕЛЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) - 30][int(peg[0])])
                 coord_cylinder.append([int(peg[0]), int(peg[1])])
     else:
         print("ЦИЛИНДРЫ НЕ НАЙДЕНЫ")
@@ -56,8 +58,11 @@ def return_coord(img):
         # Запись координат
         for peg in pegs[0]:
             print("КООРДИНАТЫ ОТВЕРСТИЯ: ", int(peg[1]), int(peg[0]))
+            print("РАДИУС ОТВЕРСТИЯ: ", peg[2])
             print("ЦВЕТ ОТВЕРСТИЯ: ", img_original[int(peg[1])][int(peg[0])])
             if img_original[int(peg[1])][int(peg[0])][1] < 50 and img_original[int(peg[1])][int(peg[0])][2] > 50:
+                print("ЦВЕТ ЖЕЛТЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) + 30][int(peg[0])])
+                print("ЦВЕТ ЖЕЛТЫЙ ВОКРУГ ОТВЕРСТИЯ: ", img_original[int(peg[1]) - 30][int(peg[0])])
                 coord_holes.append([int(peg[0]), int(peg[1])])
     else:
         print("ОТВЕРСТИЯ НЕ НАЙДЕНЫ")
@@ -67,50 +72,17 @@ def return_coord(img):
     return coord
 
 
-img = cv2.imread("test_image7.jpg")
-coord = return_coord(img)
-print("CYLINDERS: ", coord[0])
-print("HOLES: ", coord[1])
-
-for i in coord[0]:
-    cv2.circle(img, (i[0], i[1]), 2, (255, 255, 255), 3)
-for i in coord[1]:
-    cv2.circle(img, (i[0], i[1]), 2, (0, 0, 255), 3)
-
-cv2.imshow('my webcam', img)
-cv2.waitKey(0)
-
-#cam = cv2.VideoCapture(0)
-#ret_val, img = cam.read()
-#cv2.imshow('my webcam', img)
-#cv2.waitKey(0)
-
-'''
-rob = urx.Robot("192.168.0.100")
-rob.set_tcp((0, 0, 0.1, 0, 0, 0))
-rob.set_payload(2, (0, 0, 0.1))
-sleep(0.2)  #leave some time to robot to process the setup commands
-rob.movej((1, 2, 3, 4, 5, 6), a, v)
-rob.movel((x, y, z, rx, ry, rz), a, v)
-print "Current tool pose is: ",  rob.getl()
-rob.movel((0.1, 0, 0, 0, 0, 0), a, v, relative=true)  # move relative to current pose
-rob.translate((0.1, 0, 0), a, v)  #move tool and keep orientation
-rob.stopj(a)
-
-robot.movel(x, y, z, rx, ry, rz), wait=False)
-while True :
-    sleep(0.1)  #sleep first since the robot may not have processed the command yet
-    if robot.is_program_running():
+cap = cv2.VideoCapture("output3.avi")
+ret, frame = cap.read()
+cv2.imwrite("FOCUS.jpg", frame)
+while True:
+    ret, frame = cap.read()
+    coord = return_coord(frame)
+    for i in coord[0]:
+        cv2.circle(frame, (i[0], i[1]), 2, (255, 255, 255), 3)
+    for i in coord[1]:
+        cv2.circle(frame, (i[0], i[1]), 2, (0, 0, 255), 3)
+    cv2.imshow('1', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
-robot.movel(x, y, z, rx, ry, rz), wait=False)
-while.robot.getForce() < 50:
-    sleep(0.01)
-    if not robot.is_program_running():
-        break
-robot.stopl()
-
-try:
-    robot.movel((0,0,0.1,0,0,0), relative=True)
-except RobotError, ex:
-    print("Robot could not execute move (emergency stop for example), do something", ex)'''
+    print(coord)

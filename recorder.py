@@ -7,7 +7,7 @@ cap = cv2.VideoCapture(1)
 #fourcc = cv2.cv.CV_FOURCC(*'DIVX')
 #out = cv2.VideoWriter('output.avi',fourcc, 20.0, (640,480))
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-out = cv2.VideoWriter('output1.avi', fourcc, 20.0, (640,480))
+out = cv2.VideoWriter('output3.avi', fourcc, 20.0, (640,480))
 
 while(cap.isOpened()):
     ret, frame = cap.read()
